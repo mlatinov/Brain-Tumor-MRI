@@ -1,6 +1,6 @@
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-def process_image(training_dir, testing_dir, target_image_size) :
+def process_image(training_dir, testing_dir, target_image_size, color_mode = "grayscale", rescale = 1./255) :
     
     # Create Image Generators 
     train_generator = ImageDataGenerator(
@@ -11,14 +11,14 @@ def process_image(training_dir, testing_dir, target_image_size) :
         zoom_range           = 0.1,
         horizontal_flip      = True,
         rotation_range       = 10,
-        rescale              = 1./255
+        rescale              = rescale
     )
-    test_generator = ImageDataGenerator(rescale = 1./255)
+    test_generator = ImageDataGenerator(rescale = rescale)
 
     # Apply them to the supplyed dir 
     train_data = train_generator.flow_from_directory(
         directory   = training_dir,
-        color_mode  = "grayscale",
+        color_mode  = color_mode,
         class_mode  = "categorical",
         target_size = target_image_size,
         batch_size  = 32,
@@ -27,7 +27,7 @@ def process_image(training_dir, testing_dir, target_image_size) :
     )
     validation_data = train_generator.flow_from_directory(
         directory      = training_dir,
-        color_mode    = "grayscale",
+        color_mode     = color_mode,
         class_mode     = "categorical",
         target_size    = target_image_size,
         batch_size     = 32,
@@ -38,7 +38,7 @@ def process_image(training_dir, testing_dir, target_image_size) :
     test_data  = test_generator.flow_from_directory(
         directory   = testing_dir,
         target_size = target_image_size,
-        color_mode  = "grayscale",
+        color_mode  = color_mode,
         batch_size  = 32, 
         class_mode  = "categorical",
         shuffle     = False,
