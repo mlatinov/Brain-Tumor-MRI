@@ -11,7 +11,7 @@ def exp_baseline() :
     mlflow.keras.autolog()
 
     # Run the Experiment 
-    with mlflow.start_run(run_name = "Baseline") : 
+    with mlflow.start_run(run_name = "Efficient Net Baseline") : 
 
         # Process the images 
         model_data = process_image(
@@ -19,7 +19,7 @@ def exp_baseline() :
             testing_dir  = "data/Testing/",
             rescale      =  None, # Efficient Net handles it internally 
             color_mode   = "rgb", # To match the model chanels expectations 
-            target_image_size = (254, 254)
+            target_image_size = (224, 224)
         )
 
         # Plot and save augmented image 
@@ -29,14 +29,14 @@ def exp_baseline() :
         )
 
         # Get the model 
-        effecient_net = transfer_efficient_net(input_shape = (254, 254, 3))
+        effecient_net = transfer_efficient_net(input_shape = (224, 224, 3))
 
        # Compile the model for Stage one Training the Head 
         effecient_net.compile(
             optimizer =  tf.keras.optimizers.Adam(learning_rate = 0.001),
             loss      = tf.keras.losses.CategoricalCrossentropy(),
             metrics   = [
-                tf.keras.metrics.AUC(),
+                tf.keras.metrics.AUC(multi_label = True, num_labels = 4),
                 tf.keras.metrics.Recall(),
                 tf.keras.metrics.Precision()
             ]
@@ -60,17 +60,21 @@ def exp_baseline() :
 
         # Unfreeze the last 20 layers 
         base = effecient_net.get_layer("efficientnetv2-b0")
-
-        effecient_net.trainable = True
-
-        for layer in effecient_net.layers[:-20] :
+        
+        # Unfreeze last 20 layers
+        base.trainable = True
+        for layer in base.layers[:-20]:
             layer.trainable = False
 
         # Recompile the model with Lower LR
         effecient_net.compile(
             optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-5),
             loss      = tf.keras.losses.CategoricalCrossentropy(),
-            metrics   = [tf.keras.metrics.AUC()]
+            metrics   = [
+                tf.keras.metrics.AUC(multi_label = True, num_labels = 4),
+                tf.keras.metrics.Precision(),
+                tf.keras.metrics.Recall()
+            ]
         )
 
         # Retrain the model with unfreezed layers
